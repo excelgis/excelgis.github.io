@@ -1,65 +1,59 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buildingdamage</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>
-        #map { height: 100vh; margin: 0; }
-    </style>
+  <title>Leaflet Upload JSON</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    #map { height: 90vh; width: 100%; }
+    body { margin: 0; padding: 0; }
+    #upload-container {
+      padding: 10px;
+      background-color: #f9f9f9;
+    }
+  </style>
 </head>
 <body>
-    <div id="map"></div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        var map = L.map('map').setView([32.0478311, 35.1635749], 14);
+<div id="upload-container">
+  <input type="file" id="fileInput" accept=".json" multiple />
+</div>
+<div id="map"></div>
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-        const styles = {
-            'Mazare_Alnoubani.json': { color: 'blue', weight: 2, fillOpacity: 0 },
-            'Urban_Master_Plan.json': { color: 'green', weight: 2, fillOpacity: 0.3 },
-            'Block_Mazare1.json': { color: 'orange', weight: 2, fillOpacity: 0.4 },
-            'Block_Mazare2.json': { color: 'orange', weight: 2, fillOpacity: 0.4 },
-            'Block_Mazare3.geojson': { color: 'orange', weight: 2, fillOpacity: 0.4 },
-            'Block_Mazare4.geojson': { color: 'orange', weight: 2, fillOpacity: 0.4 },
-            'Block_Mazare5.geojson': { color: 'orange', weight: 2, fillOpacity: 0.4 },
-            'Block_Mazare6.geojson': { color: 'orange', weight: 2, fillOpacity: 0.4 },
-            'Building.geojson': { color: 'red', weight: 2, fillOpacity: 0.6 },
-            'Roads_InSide.json': { color: 'gray', weight: 2 },
-            'Roads_OutSide.json': { color: 'black', weight: 2 }
-        };
+<script>
+  // إنشاء الخريطة
+  const map = L.map('map').setView([31.95, 35.93], 8); // تعديل الإحداثيات حسب موقعك
 
-        const overlayLayers = {};
+  // إضافة خريطة الأساس
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
 
-        Object.keys(styles).forEach(file => {
-            fetch(file)
-                .then(res => res.json())
-                .then(data => {
-                    const layer = L.geoJSON(data, {
-                        style: styles[file],
-                        onEachFeature: function (feature, layer) {
-                            if (file === 'Building.geojson' && feature.properties.BlockNumbe) {
-                                layer.bindPopup("BlockNumbe: " + feature.properties.BlockNumbe);
-                            }
-                        }
-                    });
+  // التعامل مع رفع الملف
+  document.getElementById('fileInput').addEventListener('change', function(event) {
+    const files = event.target.files;
 
-                    // استخراج اسم الطبقة بدون الامتداد
-                    const layerName = file.split('.')[0];
-                    overlayLayers[layerName] = layer;
-                    layer.addTo(map);
-                });
-        });
+    for (const file of files) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const geojson = JSON.parse(e.target.result);
+          const layer = L.geoJSON(geojson).addTo(map);
+          map.fitBounds(layer.getBounds());
+        } catch (err) {
+          alert("⚠️ الملف ليس GeoJSON صالح: " + file.name);
+        }
+      };
+      reader.readAsText(file);
+    }
+  });
+</script>
 
-        // إضافة أداة التحكم بالطبقات بعد التأكد من تحميل الطبقات
-        setTimeout(() => {
-            L.control.layers(null, overlayLayers, { collapsed: false }).addTo(map);
-        }, 1000); // الانتظار لفترة قصيرة حتى تُحمّل الطبقات
-    </script>
 </body>
 </html>
