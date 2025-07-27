@@ -1,57 +1,72 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Leaflet Upload JSON</title>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- Leaflet CSS -->
+  <title>Leaflet with Table Export</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    #map { height: 90vh; width: 100%; }
-    body { margin: 0; padding: 0; }
-    #upload-container {
-      padding: 10px;
-      background-color: #f9f9f9;
+    #map { height: 60vh; }
+    table, th, td {
+      border: 1px solid black;
+      border-collapse: collapse;
+      padding: 5px;
+    }
+    #exportBtn {
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
 
-<div id="upload-container">
-  <input type="file" id="fileInput" accept=".json" multiple />
-</div>
+<h3>💧 آبار المياه - Wells Table</h3>
+
+<!-- جدول بيانات -->
+<table id="dataTable">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Location</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>Well A</td>
+      <td>Ramallah</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Well B</td>
+      <td>Jenin</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- زر التصدير -->
+<button id="exportBtn">📥 تصدير إلى Excel</button>
+
+<!-- خريطة -->
 <div id="map"></div>
 
-<!-- Leaflet JS -->
+<!-- مكتبة Leaflet -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<script>
-  // إنشاء الخريطة
-  const map = L.map('map').setView([31.95, 35.93], 8); // تعديل الإحداثيات حسب موقعك
+<!-- مكتبة SheetJS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-  // إضافة خريطة الأساس
+<script>
+  // خريطة Leaflet
+  const map = L.map('map').setView([32, 35], 8);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  // التعامل مع رفع الملف
-  document.getElementById('fileInput').addEventListener('change', function(event) {
-    const files = event.target.files;
-
-    for (const file of files) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const geojson = JSON.parse(e.target.result);
-          const layer = L.geoJSON(geojson).addTo(map);
-          map.fitBounds(layer.getBounds());
-        } catch (err) {
-          alert("⚠️ الملف ليس GeoJSON صالح: " + file.name);
-        }
-      };
-      reader.readAsText(file);
-    }
+  // وظيفة التصدير إلى Excel
+  document.getElementById('exportBtn').addEventListener('click', function () {
+    const table = document.getElementById("dataTable");
+    const workbook = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+    XLSX.writeFile(workbook, "WellsData.xlsx");
   });
 </script>
 
